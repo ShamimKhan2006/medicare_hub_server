@@ -20,8 +20,8 @@ let allDataCollection: any;
 export async function connectToMongoDB() {
   try {
     await client.connect();
-    const database = client.db("mediacare_hub");
-    allDataCollection = database.collection("allData");
+    const database = client.db("medicare_hub");
+    allDataCollection = database.collection("allDatas");
     console.log("✅ MongoDB Connected!!!!!!!!!!!!!!!");
     return { client, database, allDataCollection };
   } catch (err) {
@@ -39,9 +39,16 @@ app.get("/", (req, res) => {
 });
 
 
+app.get("/alldata",async(req,res)=>{
 
+  const result=await allDataCollection.find().toArray()
+  res.send(result)
+})
 
-
+app.get("/alldata/:id",async(req,res)=>{
+   const {id}=req.params
+   const result=await allDataCollection.find({})
+})
 const PORT = process.env.PORT || 5000;
 
 // আগে DB কানেক্ট করুন, তারপর সার্ভার চালু করুন
