@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { MongoClient } from 'mongodb';
 import dotenv from "dotenv";
-
+import { ObjectId } from "mongodb";
 dotenv.config();
 const app = express();
 
@@ -45,10 +45,29 @@ app.get("/alldata",async(req,res)=>{
   res.send(result)
 })
 
-app.get("/alldata/:id",async(req,res)=>{
-   const {id}=req.params
-   const result=await allDataCollection.find({})
+app.get("/allLimitData/",async (req,res)=>{
+  const result=await allDataCollection.find().limit(8).toArray()
+  res.send(result)
 })
+app.get("/alldata/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log("ID:", id);
+
+    const result = await allDataCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    console.log("RESULT:", result);
+
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 
 // আগে DB কানেক্ট করুন, তারপর সার্ভার চালু করুন
