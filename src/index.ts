@@ -17,14 +17,14 @@ if (!uri) {
 const client = new MongoClient(uri);
 let allDataCollection: any;
 let addDataColl: any;
-
+let userColl:any
 export async function connectToMongoDB() {
   try {
     await client.connect();
     const database = client.db("medicare_hub");
     allDataCollection = database.collection("allDatas");
     addDataColl = database.collection("addDataColl");
-    
+    userColl=database.collection("usercoll")
     console.log("✅ MongoDB Connected!!!!!!!!!!!!!!!");
     return { client, database, allDataCollection };
   } catch (err) {
@@ -41,6 +41,12 @@ app.get("/", (req, res) => {
   res.send("MediCare Hub Server Running 🚀");
 });
 
+
+app.post("/register",async(req,res)=>{
+  const data=req.body
+  const result=await userColl.insertOne(data)
+  res.send(result)
+})
 
 app.get("/alldata",async(req,res)=>{
 
