@@ -37,7 +37,7 @@ export async function connectToMongoDB() {
 }
 
 export async function disconnectFromMongoDB() {
-  await client.close();
+  // await client.close();
 }
 
 app.get("/", (req, res) => {
@@ -114,11 +114,16 @@ app.post('/postscoments',async (req,res)=>{
   res.send(result)
  })
 
-const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 5000;
 
-// আগে DB কানেক্ট করুন, তারপর সার্ভার চালু করুন
-connectToMongoDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-});
+// // আগে DB কানেক্ট করুন, তারপর সার্ভার চালু করুন
+// connectToMongoDB().then(() => {
+//   app.listen(PORT, () => {
+//     console.log(`Server running on http://localhost:${PORT}`);
+//   });
+// });
+
+const PORT = process.env.PORT || 5000;
+connectToMongoDB(); // কানেকশন কল করুন
+
+export default app; // এটি Vercel এর জন্য জরুরি
