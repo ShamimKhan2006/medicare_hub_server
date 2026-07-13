@@ -75,8 +75,8 @@ app.get("/alldata/:id", async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error(error);
-    // res.status(500).json({ error: error.message });
+
+
   }
 });
 
@@ -124,6 +124,6 @@ app.post('/postscoments',async (req,res)=>{
 // });
 
 const PORT = process.env.PORT || 5000;
-connectToMongoDB(); // কানেকশন কল করুন
+connectToMongoDB(); 
 
-export default app; // এটি Vercel এর জন্য জরুরি
+export default app; 
