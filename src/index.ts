@@ -18,6 +18,7 @@ const client = new MongoClient(uri);
 let allDataCollection: any;
 let addDataColl: any;
 let userColl:any
+let postComments:any
 export async function connectToMongoDB() {
   try {
     await client.connect();
@@ -25,6 +26,8 @@ export async function connectToMongoDB() {
     allDataCollection = database.collection("allDatas");
     addDataColl = database.collection("addDataColl");
     userColl=database.collection("usercoll")
+    postComments=database.collection("postComments")
+
     console.log("✅ MongoDB Connected!!!!!!!!!!!!!!!");
     return { client, database, allDataCollection };
   } catch (err) {
@@ -92,6 +95,24 @@ app.get("/myhealth-posts",async(req,res)=>{
   res.send(result)
 })
 
+
+app.post('/postscoments',async (req,res)=>{
+  const query=req.body 
+
+  const result=await postComments.insertOne(query)
+  res.send(result)
+})
+
+ app.get("/comments",async(req,res)=>{
+  const result=await postComments.find().toArray()
+  res.send(result)
+ })
+ app.get("/showcomments/:doctorId",async(req,res)=>{
+  const {doctorId} = req.params 
+  console.log("doctorId",doctorId)
+  const result=await postComments.find({ doctorId}).toArray()
+  res.send(result)
+ })
 
 const PORT = process.env.PORT || 5000;
 
