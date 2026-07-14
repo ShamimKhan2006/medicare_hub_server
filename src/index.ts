@@ -436,6 +436,11 @@ app.get("/", (_req: Request, res: Response) => {
   res.send("🚀 MediCare Hub Server Running");
 });
 
+app.get("/test", (_req, res) => {
+  res.send("Test Route Working");
+});
+
+
 // All Data
 app.get("/alldata", async (_req: Request, res: Response) => {
   try {
@@ -451,7 +456,7 @@ app.get("/alldata", async (_req: Request, res: Response) => {
 }
 });
 
-// Single Data
+// single data
 app.get("/alldata/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
