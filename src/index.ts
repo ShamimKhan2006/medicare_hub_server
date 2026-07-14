@@ -449,10 +449,12 @@ app.get("/alldata", async (_req: Request, res: Response) => {
 // Single Data
 app.get("/alldata/:id", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid ID" });
+      return res.status(400).json({
+        message: "Invalid ID",
+      });
     }
 
     const result = await allDataCollection.findOne({
@@ -460,12 +462,17 @@ app.get("/alldata/:id", async (req: Request, res: Response) => {
     });
 
     if (!result) {
-      return res.status(404).json({ message: "Doctor not found" });
+      return res.status(404).json({
+        message: "Doctor not found",
+      });
     }
 
-    res.json(result);
-  } catch {
-    res.status(500).json({ message: "Server Error" });
+    return res.json(result);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
   }
 });
 
