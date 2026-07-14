@@ -134,14 +134,19 @@
 
 
 import express from "express";
-import cors from "cors";
+
 import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
 app.use(express.json());
+ const cors = require('cors');
+app.use(cors({
+  origin: 'https://medicare-hub-client.vercel.app',
+  credentials: true,
+}));
 
 const uri = process.env.MONGODB_URL;
 if (!uri) {
