@@ -441,9 +441,14 @@ app.get("/alldata", async (_req: Request, res: Response) => {
   try {
     const result = await allDataCollection.find().toArray();
     res.json(result);
-  } catch {
-    res.status(500).json({ message: "Failed to fetch data" });
-  }
+  } catch (error) {
+  console.error("ALldata Error:", error);
+
+  res.status(500).json({
+    message: "Failed to fetch data",
+    error: error instanceof Error ? error.message : String(error),
+  });
+}
 });
 
 // Single Data
