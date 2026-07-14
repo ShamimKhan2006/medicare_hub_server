@@ -55,7 +55,7 @@ async function ensureConnected(): Promise<void> {
 }
 
 // প্রতিটা request এর আগে DB কানেক্ট নিশ্চিত
-app.use(async (req: Request, res: Response, next: NextFunction) => {
+app.use(async (_req: Request, res: Response, next: NextFunction) => {
   try {
     await ensureConnected();
     next();
@@ -70,13 +70,16 @@ app.get("/", (_req: Request, res: Response) => {
 
 // রেজিস্ট্রেশন
 app.post("/register", async (req: Request, res: Response) => {
-  try {
-    const result = await userColl.insertOne(req.body);
-    res.send(result);
-  } catch {
-    res.status(500).json({ error: "Failed to register" });
-  }
-});
+  
+    const { email } = req.body; 
+    console.log("email",email)
+
+
+      const result= await userColl.findOne({ email });
+   res.send(result) 
+})
+
+
 
 // সব ডাটা
 app.get("/alldata", async (_req: Request, res: Response) => {
@@ -101,9 +104,21 @@ app.get("/allLimitData", async (_req: Request, res: Response) => {
 // আইডি অনুযায়ী একটি ডাটা
 app.get("/alldata/:id", async (req: Request, res: Response) => {
   try {
+    const { id } = req.params;
+
+    // ⚠️ বাগ ফিক্স: আগে req.params পুরোটাই পাঠানো হচ্ছিল, req.params.id নয়
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid id format" });
+    }
+
     const result = await allDataCollection.findOne({
-      _id: new ObjectId(req.params.id),
+      _id: new ObjectId(id),
     });
+
+    if (!result) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
     res.json(result);
   } catch {
     res.status(500).json({ error: "Failed to fetch item" });
@@ -114,7 +129,7 @@ app.get("/alldata/:id", async (req: Request, res: Response) => {
 app.post("/addHealthPost", async (req: Request, res: Response) => {
   try {
     const result = await addDataColl.insertOne(req.body);
-    res.send(result);
+    res.status(201).send(result);
   } catch {
     res.status(500).json({ error: "Failed to add post" });
   }
@@ -124,7 +139,7 @@ app.post("/addHealthPost", async (req: Request, res: Response) => {
 app.get("/myhealth-posts", async (req: Request, res: Response) => {
   try {
     const email = req.query.email;
-    if (!email) {
+    if (!email || typeof email !== "string") {
       return res.status(400).json({ error: "email query required" });
     }
     const result = await addDataColl.find({ email }).toArray();
@@ -138,7 +153,7 @@ app.get("/myhealth-posts", async (req: Request, res: Response) => {
 app.post("/postscoments", async (req: Request, res: Response) => {
   try {
     const result = await postComments.insertOne(req.body);
-    res.send(result);
+    res.status(201).send(result);
   } catch {
     res.status(500).json({ error: "Failed to post comment" });
   }
@@ -157,13 +172,17 @@ app.get("/comments", async (_req: Request, res: Response) => {
 // ডাক্তার অনুযায়ী কমেন্ট
 app.get("/showcomments/:doctorId", async (req: Request, res: Response) => {
   try {
-    const result = await postComments
-      .find({ doctorId: req.params.doctorId })
-      .toArray();
+    const { doctorId } = req.params;
+    const result = await postComments.find({ doctorId }).toArray();
     res.send(result);
   } catch {
     res.status(500).json({ error: "Failed to fetch comments" });
   }
+});
+
+// 404 handler — অজানা রুটের জন্য
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({ error: "Route not found" });
 });
 
 // শুধু লোকাল ডেভ-এ listen করবে (Vercel-এ করবে না)
