@@ -481,6 +481,26 @@ app.get("/alldata/:id", async (req: Request, res: Response) => {
   }
 });
 
+
+app.get("/allLimitData", async (_req: Request, res: Response) => {
+  try {
+    const result = await allDataCollection.find().limit(8).toArray();
+    res.send(result);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch data" });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
 // Register
 app.post("/register", async (req: Request, res: Response) => {
   try {
