@@ -102,6 +102,58 @@ app.get("/alldata/:id", async (req: Request, res: Response) => {
   }
 });
 
+
+
+app.get("/debug-db", async (_req: Request, res: Response) => {
+  try {
+    if (!allDataCollection) {
+      return res.status(500).json({ error: "Collection not initialized" });
+    }
+    
+    const count = await allDataCollection.countDocuments();
+    const sample = await allDataCollection.find().limit(1).toArray();
+
+    res.json({
+      status: "ok",
+      collection: "allDatas",
+      totalDocuments: count,
+      sample: sample
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "DB Error",
+      message: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Limited Data (Home Page)
 app.get("/allLimitData", async (_req: Request, res: Response) => {
   try {
