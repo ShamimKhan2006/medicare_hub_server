@@ -4,8 +4,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const uri = process.env.MONGODB_URL;
+
 if (!uri) {
-  throw new Error("MONGODB_URL is missing in environment variables");
+  throw new Error("❌ MONGODB_URL environment variable is missing!");
 }
 
 const client = new MongoClient(uri, {
@@ -31,7 +32,7 @@ export async function connectDB() {
     userColl = database.collection("usercoll");
     postComments = database.collection("postComments");
 
-    console.log("✅ MongoDB Connected Successfully");
+    console.log("✅ MongoDB Connected Successfully to 'medicare_hub'");
   } catch (error) {
     console.error("❌ MongoDB Connection Failed:", error);
     throw error;

@@ -29,39 +29,24 @@ app.use(
   })
 );
 
-// Connect Database + Start Server
-async function startServer() {
-  try {
-    await connectDB();
-
-    console.log("🚀 Server Ready");
-
-    // Only listen locally
-    if (process.env.NODE_ENV !== "production") {
-      app.listen(PORT, () => {
-        console.log(`✅ Server running on http://localhost:${PORT}`);
-      });
-    }
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-}
-
-// ==================== ROUTES ====================
+// ====================== ROUTES ======================
 
 app.get("/", (_req: Request, res: Response) => {
   res.send("🚀 MediCare Hub Server Running");
 });
 
 app.get("/test", (_req: Request, res: Response) => {
-  res.send("Test Route Working ✅");
+  res.json({ message: "Test Route Working ✅" });
 });
 
 // All Data
 app.get("/alldata", async (_req: Request, res: Response) => {
   try {
+    if (!allDataCollection) {
+      return res.status(500).json({ message: "Collection not initialized" });
+    }
     const result = await allDataCollection.find().toArray();
+    console.log(`✅ Fetched ${result.length} documents`);
     res.json(result);
   } catch (error) {
     console.error("ALldata Error:", error);
@@ -73,23 +58,16 @@ app.get("/alldata", async (_req: Request, res: Response) => {
 });
 
 // Single Doctor
-// Single Doctor
 app.get("/alldata/:id", async (req: Request, res: Response) => {
   try {
     let id = req.params.id;
-
-    // Handle array case (Express sometimes returns string[])
-    if (Array.isArray(id)) {
-      id = id[0];
-    }
+    if (Array.isArray(id)) id = id[0];
 
     if (!id || !ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    const result = await allDataCollection.findOne({ 
-      _id: new ObjectId(id) 
-    });
+    const result = await allDataCollection.findOne({ _id: new ObjectId(id) });
 
     if (!result) {
       return res.status(404).json({ message: "Doctor not found" });
@@ -102,59 +80,7 @@ app.get("/alldata/:id", async (req: Request, res: Response) => {
   }
 });
 
-
-
-app.get("/debug-db", async (_req: Request, res: Response) => {
-  try {
-    if (!allDataCollection) {
-      return res.status(500).json({ error: "Collection not initialized" });
-    }
-    
-    const count = await allDataCollection.countDocuments();
-    const sample = await allDataCollection.find().limit(1).toArray();
-
-    res.json({
-      status: "ok",
-      collection: "allDatas",
-      totalDocuments: count,
-      sample: sample
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: "DB Error",
-      message: error instanceof Error ? error.message : String(error)
-    });
-  }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Limited Data (Home Page)
+// Limited Data
 app.get("/allLimitData", async (_req: Request, res: Response) => {
   try {
     const result = await allDataCollection.find().limit(8).toArray();
@@ -198,7 +124,7 @@ app.get("/myhealth-posts", async (req: Request, res: Response) => {
   }
 });
 
-// Comments Routes...
+// Comments
 app.post("/postscoments", async (req: Request, res: Response) => {
   try {
     const result = await postComments.insertOne(req.body);
@@ -227,7 +153,7 @@ app.get("/showcomments/:doctorId", async (req: Request, res: Response) => {
 });
 
 // Delete Routes
-app.delete("/deleteDoctor/:id", async (req, res) => {
+app.delete("/deleteDoctor/:id", async (req: Request, res: Response) => {
   try {
     const result = await addDataColl.deleteOne({ _id: new ObjectId(req.params.id) });
     res.json(result);
@@ -236,7 +162,7 @@ app.delete("/deleteDoctor/:id", async (req, res) => {
   }
 });
 
-app.delete("/deleteComment/:id", async (req, res) => {
+app.delete("/deleteComment/:id", async (req: Request, res: Response) => {
   try {
     const result = await postComments.deleteOne({ _id: new ObjectId(req.params.id) });
     res.json(result);
@@ -245,12 +171,29 @@ app.delete("/deleteComment/:id", async (req, res) => {
   }
 });
 
-// 404 Handler
+// 404
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-// Start the server
+// Start Server
+async function startServer() {
+  try {
+    console.log("🔄 Connecting to MongoDB...");
+    await connectDB();
+    console.log("✅ MongoDB Connected & Server Ready");
+
+    if (process.env.NODE_ENV !== "production") {
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+      });
+    }
+  } catch (error) {
+    console.error("❌ Server Start Failed:", error);
+    process.exit(1);
+  }
+}
+
 startServer();
 
 export default app;
