@@ -155,27 +155,43 @@ app.get("/showcomments/:doctorId", async (req: Request, res: Response) => {
 // Delete Routes
 app.delete("/deleteDoctor/:id", async (req: Request, res: Response) => {
   try {
-    const result = await addDataColl.deleteOne({ _id: new ObjectId(req.params.id) });
-    res.json(result);
+    const id = String(req.params.id);
+
+    if (!id || !ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid ID" });
+      return;
+    }
+
+    const result = await addDataColl.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    res.status(200).json(result);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Delete failed" });
   }
 });
 
 app.delete("/deleteComment/:id", async (req: Request, res: Response) => {
   try {
-    const result = await postComments.deleteOne({ _id: new ObjectId(req.params.id) });
-    res.json(result);
+    const id = String(req.params.id);
+
+    if (!id || !ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid ID" });
+      return;
+    }
+
+    const result = await postComments.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    res.status(200).json(result);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Delete failed" });
   }
 });
-
-// 404
-app.use((_req: Request, res: Response) => {
-  res.status(404).json({ message: "Route not found" });
-});
-
 // Start Server
 async function startServer() {
   try {
