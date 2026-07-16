@@ -73,15 +73,23 @@ app.get("/alldata", async (_req: Request, res: Response) => {
 });
 
 // Single Doctor
+// Single Doctor
 app.get("/alldata/:id", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    let id = req.params.id;
 
-    if (!ObjectId.isValid(id)) {
+    // Handle array case (Express sometimes returns string[])
+    if (Array.isArray(id)) {
+      id = id[0];
+    }
+
+    if (!id || !ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    const result = await allDataCollection.findOne({ _id: new ObjectId(id) });
+    const result = await allDataCollection.findOne({ 
+      _id: new ObjectId(id) 
+    });
 
     if (!result) {
       return res.status(404).json({ message: "Doctor not found" });
@@ -89,7 +97,7 @@ app.get("/alldata/:id", async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    console.error(error);
+    console.error("Single Doctor Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
