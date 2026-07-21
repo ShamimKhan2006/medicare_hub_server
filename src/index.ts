@@ -162,7 +162,7 @@ app.delete("/deleteDoctor/:id", async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await addDataColl.deleteOne({
+    const result = await allDataCollection.deleteOne({
       _id: new ObjectId(id),
     });
 
