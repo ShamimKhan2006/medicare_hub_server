@@ -16,7 +16,6 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 
-// Middleware
 app.use(express.json());
 
 app.use(
@@ -29,8 +28,6 @@ app.use(
   })
 );
 
-// ====================== ROUTES ======================
-
 app.get("/", (_req: Request, res: Response) => {
   res.send("🚀 MediCare Hub Server Running");
 });
@@ -39,7 +36,6 @@ app.get("/test", (_req: Request, res: Response) => {
   res.json({ message: "Test Route Working ✅" });
 });
 
-// All Data
 app.get("/alldata", async (_req: Request, res: Response) => {
   try {
     if (!allDataCollection) {
@@ -57,7 +53,6 @@ app.get("/alldata", async (_req: Request, res: Response) => {
   }
 });
 
-// Single Doctor
 app.get("/alldata/:id", async (req: Request, res: Response) => {
   try {
     let id = req.params.id;
@@ -80,7 +75,6 @@ app.get("/alldata/:id", async (req: Request, res: Response) => {
   }
 });
 
-// Limited Data
 app.get("/allLimitData", async (_req: Request, res: Response) => {
   try {
     const result = await allDataCollection.find().limit(8).toArray();
@@ -90,7 +84,6 @@ app.get("/allLimitData", async (_req: Request, res: Response) => {
   }
 });
 
-// Register
 app.post("/register", async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -101,15 +94,11 @@ app.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-// Add Health Post
 app.post("/addHealthPost", async (req: Request, res: Response) => {
   try {
     const data = req.body;
 
-    // addDataColl-এ insert
     const addResult = await addDataColl.insertOne(data);
-
-    // allDataCollection-এও insert (তাই Doctor listing থেকে দেখাবে)
     const allDataResult = await allDataCollection.insertOne(data);
 
     res.status(201).json({
@@ -123,7 +112,6 @@ app.post("/addHealthPost", async (req: Request, res: Response) => {
   }
 });
 
-// My Health Posts
 app.get("/myhealth-posts", async (req: Request, res: Response) => {
   try {
     const email = req.query.email as string;
@@ -136,7 +124,6 @@ app.get("/myhealth-posts", async (req: Request, res: Response) => {
   }
 });
 
-// Comments
 app.post("/postscoments", async (req: Request, res: Response) => {
   try {
     const result = await postComments.insertOne(req.body);
@@ -164,7 +151,6 @@ app.get("/showcomments/:doctorId", async (req: Request, res: Response) => {
   }
 });
 
-// Delete Routes
 app.delete("/deleteDoctor/:id", async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
@@ -204,7 +190,7 @@ app.delete("/deleteComment/:id", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Delete failed" });
   }
 });
-// Start Server
+
 async function startServer() {
   try {
     console.log("🔄 Connecting to MongoDB...");
