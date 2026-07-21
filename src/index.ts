@@ -104,9 +104,21 @@ app.post("/register", async (req: Request, res: Response) => {
 // Add Health Post
 app.post("/addHealthPost", async (req: Request, res: Response) => {
   try {
-    const result = await addDataColl.insertOne(req.body);
-    res.status(201).json(result);
+    const data = req.body;
+
+    // addDataColl-এ insert
+    const addResult = await addDataColl.insertOne(data);
+
+    // allDataCollection-এও insert (তাই Doctor listing থেকে দেখাবে)
+    const allDataResult = await allDataCollection.insertOne(data);
+
+    res.status(201).json({
+      addDataColl: addResult,
+      allDataCollection: allDataResult,
+      message: "Health post added successfully",
+    });
   } catch (error) {
+    console.error("Add Health Post Error:", error);
     res.status(500).json({ message: "Failed to add post" });
   }
 });
