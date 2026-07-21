@@ -6,7 +6,7 @@ dotenv.config();
 const uri = process.env.MONGODB_URL;
 
 if (!uri) {
-  throw new Error("❌ MONGODB_URL environment variable is missing!");
+  throw new Error("MONGODB_URL environment variable is missing!");
 }
 
 const client = new MongoClient(uri, {
@@ -21,6 +21,7 @@ export let allDataCollection: Collection;
 export let addDataColl: Collection;
 export let userColl: Collection;
 export let postComments: Collection;
+export let isConnected = false;
 
 export async function connectDB() {
   try {
@@ -32,9 +33,21 @@ export async function connectDB() {
     userColl = database.collection("usercoll");
     postComments = database.collection("postComments");
 
-    console.log("✅ MongoDB Connected Successfully to 'medicare_hub'");
+    isConnected = true;
+    console.log("MongoDB connected successfully to 'medicare_hub'");
   } catch (error) {
-    console.error("❌ MongoDB Connection Failed:", error);
+    console.error("MongoDB connection failed:", error);
+    isConnected = false;
     throw error;
+  }
+}
+
+export async function closeDB() {
+  try {
+    await client.close();
+    isConnected = false;
+    console.log("MongoDB connection closed");
+  } catch (error) {
+    console.error("Error closing MongoDB connection:", error);
   }
 }

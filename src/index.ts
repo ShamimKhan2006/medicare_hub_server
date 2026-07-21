@@ -1,15 +1,7 @@
 import express, { type Request, type Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { ObjectId } from "mongodb";
-
-import {
-  connectDB,
-  allDataCollection,
-  addDataColl,
-  userColl,
-  postComments,
-} from "./db";
+import { MongoClient, ServerApiVersion, ObjectId, type Collection } from "mongodb";
 
 dotenv.config();
 
@@ -17,61 +9,65 @@ const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 
 app.use(express.json());
-
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://medicare-hub-client.vercel.app",
-    ],
+    origin: ["http://localhost:3000", "https://medicare-hub-client.vercel.app"],
     credentials: true,
   })
 );
 
+const uri = process.env.MONGODB_URL;
+if (!uri) {
+  throw new Error("MONGODB_URL is not defined");
+}
+
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+});
+
+let allDataCollection: Collection;
+let addDataColl: Collection;
+let userColl: Collection;
+let postComments: Collection;
+
 app.get("/", (_req: Request, res: Response) => {
-  res.send("🚀 MediCare Hub Server Running");
+  res.send("MediCare Hub Server Running");
 });
 
 app.get("/test", (_req: Request, res: Response) => {
-  res.json({ message: "Test Route Working ✅" });
+  res.json({ message: "Test Route Working" });
 });
 
 app.get("/alldata", async (_req: Request, res: Response) => {
   try {
-    if (!allDataCollection) {
-      return res.status(500).json({ message: "Collection not initialized" });
-    }
     const result = await allDataCollection.find().toArray();
-    console.log(`✅ Fetched ${result.length} documents`);
     res.json(result);
   } catch (error) {
-    console.error("ALldata Error:", error);
-    res.status(500).json({
-      message: "Failed to fetch data",
-      error: error instanceof Error ? error.message : String(error),
-    });
+    res.status(500).json({ message: "Failed to fetch data" });
   }
 });
 
-app.get("/alldata/:id", async (req: Request, res: Response) => {
+app.get("/alldata/:id", async (req: Request<{ id: string }>, res: Response): Promise<void> => {
   try {
-    let id = req.params.id;
-    if (Array.isArray(id)) id = id[0];
-
-    if (!id || !ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid ID" });
+    const { id } = req.params;
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid ID" });
+      return;
     }
 
     const result = await allDataCollection.findOne({ _id: new ObjectId(id) });
-
     if (!result) {
-      return res.status(404).json({ message: "Doctor not found" });
+      res.status(404).json({ message: "Doctor not found" });
+      return;
     }
 
     res.json(result);
   } catch (error) {
-    console.error("Single Doctor Error:", error);
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -84,20 +80,24 @@ app.get("/allLimitData", async (_req: Request, res: Response) => {
   }
 });
 
-app.post("/register", async (req: Request, res: Response) => {
+app.post("/register", async (req: Request, res: Response): Promise<void> => {
   try {
     const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ message: "Email required" });
+      return;
+    }
+
     const user = await userColl.findOne({ email });
     res.json(user || { message: "User not found" });
   } catch (error) {
-    res.status(500).json({ message: "Registration Failed" });
+    res.status(500).json({ message: "Registration failed" });
   }
 });
 
 app.post("/addHealthPost", async (req: Request, res: Response) => {
   try {
     const data = req.body;
-
     const addResult = await addDataColl.insertOne(data);
     const allDataResult = await allDataCollection.insertOne(data);
 
@@ -107,15 +107,17 @@ app.post("/addHealthPost", async (req: Request, res: Response) => {
       message: "Health post added successfully",
     });
   } catch (error) {
-    console.error("Add Health Post Error:", error);
     res.status(500).json({ message: "Failed to add post" });
   }
 });
 
-app.get("/myhealth-posts", async (req: Request, res: Response) => {
+app.get("/myhealth-posts", async (req: Request, res: Response): Promise<void> => {
   try {
-    const email = req.query.email as string;
-    if (!email) return res.status(400).json({ message: "Email required" });
+    const email = typeof req.query.email === "string" ? req.query.email : undefined;
+    if (!email) {
+      res.status(400).json({ message: "Email required" });
+      return;
+    }
 
     const result = await addDataColl.find({ email }).toArray();
     res.json(result);
@@ -144,70 +146,62 @@ app.get("/comments", async (_req: Request, res: Response) => {
 
 app.get("/showcomments/:doctorId", async (req: Request, res: Response) => {
   try {
-    const result = await postComments.find({ doctorId: req.params.doctorId }).toArray();
+    const result = await postComments
+      .find({ doctorId: req.params.doctorId })
+      .toArray();
     res.json(result);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch comments" });
   }
 });
 
-app.delete("/deleteDoctor/:id", async (req: Request, res: Response) => {
+app.delete("/deleteDoctor/:id", async (req: Request<{ id: string }>, res: Response): Promise<void> => {
   try {
-    const id = String(req.params.id);
-
-    if (!id || !ObjectId.isValid(id)) {
+    const { id } = req.params;
+    if (!ObjectId.isValid(id)) {
       res.status(400).json({ message: "Invalid ID" });
       return;
     }
 
-    const result = await allDataCollection.deleteOne({
-      _id: new ObjectId(id),
-    });
-
+    const result = await allDataCollection.deleteOne({ _id: new ObjectId(id) });
     res.status(200).json(result);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Delete failed" });
   }
 });
 
-app.delete("/deleteComment/:id", async (req: Request, res: Response) => {
+app.delete("/deleteComment/:id", async (req: Request<{ id: string }>, res: Response): Promise<void> => {
   try {
-    const id = String(req.params.id);
-
-    if (!id || !ObjectId.isValid(id)) {
+    const { id } = req.params;
+    if (!ObjectId.isValid(id)) {
       res.status(400).json({ message: "Invalid ID" });
       return;
     }
 
-    const result = await postComments.deleteOne({
-      _id: new ObjectId(id),
-    });
-
+    const result = await postComments.deleteOne({ _id: new ObjectId(id) });
     res.status(200).json(result);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Delete failed" });
   }
 });
 
-async function startServer() {
-  try {
-    console.log("🔄 Connecting to MongoDB...");
-    await connectDB();
-    console.log("✅ MongoDB Connected & Server Ready");
+async function run() {
+  await client.connect();
 
-    if (process.env.NODE_ENV !== "production") {
-      app.listen(PORT, () => {
-        console.log(`🚀 Server running on http://localhost:${PORT}`);
-      });
-    }
-  } catch (error) {
-    console.error("❌ Server Start Failed:", error);
-    process.exit(1);
-  }
+  const database = client.db("medicare_hub");
+  allDataCollection = database.collection("allDatas");
+  addDataColl = database.collection("addDataColl");
+  userColl = database.collection("usercoll");
+  postComments = database.collection("postComments");
+
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 }
 
-startServer();
+run().catch((error) => {
+  console.error("Server start failed:", error);
+  process.exit(1);
+});
 
 export default app;
