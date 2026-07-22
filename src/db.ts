@@ -23,28 +23,38 @@ export let userColl: Collection;
 export let postComments: Collection;
 export let isConnected = false;
 
-export async function connectDB() {
-  try {
-    await client.connect();
-    const database = client.db("medicare_hub");
+let connectionPromise: Promise<void> | null = null;
 
-    allDataCollection = database.collection("allDatas");
-    addDataColl = database.collection("addDataColl");
-    userColl = database.collection("usercoll");
-    postComments = database.collection("postComments");
+async function establishConnection(): Promise<void> {
+  await client.connect();
+  const database = client.db("medicare_hub");
 
-    isConnected = true;
-    console.log("MongoDB connected successfully to 'medicare_hub'");
-  } catch (error) {
-    console.error("MongoDB connection failed:", error);
-    isConnected = false;
-    throw error;
+  allDataCollection = database.collection("allDatas");
+  addDataColl = database.collection("addDataColl");
+  userColl = database.collection("usercoll");
+  postComments = database.collection("postComments");
+
+  isConnected = true;
+  console.log("MongoDB connected successfully to 'medicare_hub'");
+}
+
+export async function connectDB(): Promise<void> {
+  if (isConnected) return;
+
+  if (!connectionPromise) {
+    connectionPromise = establishConnection().catch((error) => {
+      console.error("MongoDB connection failed:", error);
+      isConnected = false;
+      connectionPromise = null;
+      throw error;
+    });
   }
+
+  return connectionPromise;
 }
 
 export async function closeDB() {
   try {
-    // await client.close();
     isConnected = false;
     console.log("MongoDB connection closed");
   } catch (error) {

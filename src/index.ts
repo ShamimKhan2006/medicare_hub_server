@@ -35,6 +35,17 @@ app.use(
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
+// ✅ নতুন যোগ করা হয়েছে: প্রতিটা request DB connection নিশ্চিত করে নেবে
+app.use(async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("DB connection failed in middleware:", error);
+    res.status(503).json({ message: "Database not connected" });
+  }
+});
+
 const log = (method: string, path: string, status?: number) => {
   const ts = new Date().toISOString();
   if (status) {
@@ -89,6 +100,10 @@ app.get("/alldata/:id", async (req: Request, res: Response) => {
 
     if (!id || !ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid ID" });
+    }
+
+    if (!isConnected || !allDataCollection) {
+      return res.status(503).json({ message: "Database not connected" });
     }
 
     const result = await allDataCollection.findOne({ _id: new ObjectId(id) });
@@ -299,7 +314,7 @@ app.delete("/deleteComment/:id", async (req: Request, res: Response) => {
     });
 
     if (result.deletedCount === 0) {
-      return res.status(404).json({ message: "Comment not found" });
+      return res.status(404).json({ message: "Comment not found this" });
     }
 
     res.status(200).json(result);
@@ -323,21 +338,22 @@ const gracefulShutdown = async () => {
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
+// ✅ বদলানো হয়েছে: Vercel-এ শুধু app export হয়, connect middleware-এ হয়
 async function startServer() {
-  try {
-    console.log(`Environment: ${NODE_ENV}`);
-    console.log("Connecting to MongoDB...");
-    await connectDB();
-    console.log("MongoDB Connected & Server Ready");
-
-    if (process.env.VERCEL !== "1") {
-      app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
-      });
+  if (process.env.VERCEL !== "1") {
+    try {
+      console.log(`Environment: ${NODE_ENV}`);
+      console.log("Connecting to MongoDB...");
+      await connectDB();
+      console.log("MongoDB Connected & Server Ready");
+    } catch (error) {
+      console.error("Server Start Failed:", error);
+      process.exit(1);
     }
-  } catch (error) {
-    console.error("Server Start Failed:", error);
-    process.exit(1);
+
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
   }
 }
 
