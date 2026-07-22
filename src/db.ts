@@ -44,7 +44,7 @@ export async function connectDB() {
 
 export async function closeDB() {
   try {
-    await client.close();
+    // await client.close();
     isConnected = false;
     console.log("MongoDB connection closed");
   } catch (error) {
